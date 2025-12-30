@@ -9,7 +9,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
+        installHelperIfNeeded()
         startUpdateTimer()
+    }
+
+    private func installHelperIfNeeded() {
+        if HelperManager.shared.needsInstallation {
+            HelperManager.shared.installHelper { success in
+                if success {
+                    // Helper installed, temperature will work now
+                    SystemStats.shared.updateTemperatureAsync()
+                }
+            }
+        }
     }
 
     private func setupStatusItem() {
@@ -24,7 +36,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startUpdateTimer() {
+        // Initial temperature update
+        SystemStats.shared.updateTemperatureAsync()
+
         updateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            SystemStats.shared.updateTemperatureAsync()
             self?.updateStatusText()
         }
     }
@@ -33,10 +49,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let cpuUsage = Int(SystemStats.shared.getCPUUsage())
         let ramUsage = Int(SystemStats.shared.getRAMUsage())
         let gpuUsage = Int(SystemStats.shared.getGPUUsage())
-        // Placeholder for now
-        let temperature = Int.random(in: 40...75)
+        let temperature = SystemStats.shared.getCPUTemperature()
 
-        let statusText = String(format: "C:%d%% G:%d%% R:%d%% %d°", cpuUsage, gpuUsage, ramUsage, temperature)
+        let tempString: String
+        if temperature > 0 {
+            tempString = String(format: "%d°", Int(temperature))
+        } else {
+            tempString = "—°"
+        }
+
+        let statusText = String(format: "C:%d%% G:%d%% R:%d%% %@", cpuUsage, gpuUsage, ramUsage, tempString)
 
         DispatchQueue.main.async {
             self.statusItem?.button?.title = statusText

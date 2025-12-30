@@ -39,10 +39,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+            // Set up the icon
+            if let icon = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "System Stats") {
+                let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                button.image = icon.withSymbolConfiguration(config)
+                button.imagePosition = .imageLeading
+            }
+
+            button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
             button.action = #selector(togglePopover)
             button.target = self
-            button.title = "SysStats"
+            button.title = " SysStats"
         }
     }
 
@@ -77,7 +84,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateStatusText(with metrics: SystemMetrics) {
-        statusItem?.button?.title = metrics.statusBarText(prefs: PreferencesManager.shared)
+        let text = metrics.statusBarText(prefs: PreferencesManager.shared)
+        statusItem?.button?.title = " \(text)"
     }
 
     // MARK: - Popover

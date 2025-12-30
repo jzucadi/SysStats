@@ -121,7 +121,7 @@ class SystemStats {
         inputStruct.key = keyCode
         inputStruct.data8 = kSMCGetKeyInfo
 
-        var inputSize = MemoryLayout<SMCKeyData>.size
+        let inputSize = MemoryLayout<SMCKeyData>.size
         var outputSize = MemoryLayout<SMCKeyData>.size
 
         let result1 = IOConnectCallStructMethod(

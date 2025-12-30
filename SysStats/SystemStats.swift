@@ -1,4 +1,5 @@
 import Foundation
+import IOKit
 
 class SystemStats {
     static let shared = SystemStats()
@@ -81,5 +82,99 @@ class SystemStats {
         let ramUsage = (Double(usedMemory) / Double(totalRAM)) * 100.0
 
         return ramUsage
+    }
+
+    func getGPUUsage() -> Double {
+        // Try Apple Silicon GPU first (AGXAccelerator)
+        if let usage = getAppleSiliconGPUUsage() {
+            return usage
+        }
+
+        // Fallback to Intel GPU (IOAccelerator)
+        if let usage = getIntelGPUUsage() {
+            return usage
+        }
+
+        return 0.0
+    }
+
+    private func getAppleSiliconGPUUsage() -> Double? {
+        let matchingDict = IOServiceMatching("AGXAccelerator")
+        var iterator: io_iterator_t = 0
+
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == KERN_SUCCESS else {
+            return nil
+        }
+
+        defer { IOObjectRelease(iterator) }
+
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer {
+                IOObjectRelease(service)
+                service = IOIteratorNext(iterator)
+            }
+
+            var properties: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                  let props = properties?.takeRetainedValue() as? [String: Any] else {
+                continue
+            }
+
+            // Look for performance statistics
+            if let perfStats = props["PerformanceStatistics"] as? [String: Any] {
+                // Try different keys used by Apple Silicon GPUs
+                if let utilization = perfStats["Device Utilization %"] as? Double {
+                    return utilization
+                }
+                if let utilization = perfStats["GPU Activity(%)"] as? Double {
+                    return utilization
+                }
+                if let utilization = perfStats["hardwareWaitTime"] as? Double,
+                   let totalTime = perfStats["hardwareTotalTime"] as? Double,
+                   totalTime > 0 {
+                    return ((totalTime - utilization) / totalTime) * 100.0
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func getIntelGPUUsage() -> Double? {
+        let matchingDict = IOServiceMatching("IOAccelerator")
+        var iterator: io_iterator_t = 0
+
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == KERN_SUCCESS else {
+            return nil
+        }
+
+        defer { IOObjectRelease(iterator) }
+
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer {
+                IOObjectRelease(service)
+                service = IOIteratorNext(iterator)
+            }
+
+            var properties: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                  let props = properties?.takeRetainedValue() as? [String: Any] else {
+                continue
+            }
+
+            if let perfStats = props["PerformanceStatistics"] as? [String: Any] {
+                // Intel GPU utilization keys
+                if let utilization = perfStats["GPU Core Utilization"] as? Double {
+                    return utilization
+                }
+                if let utilization = perfStats["Device Utilization %"] as? Double {
+                    return utilization
+                }
+            }
+        }
+
+        return nil
     }
 }

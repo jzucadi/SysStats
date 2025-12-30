@@ -32,8 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusText() {
         let cpuUsage = Int(SystemStats.shared.getCPUUsage())
         let ramUsage = Int(SystemStats.shared.getRAMUsage())
-        // Placeholder values for now
-        let gpuUsage = Int.random(in: 5...80)
+        let gpuUsage = Int(SystemStats.shared.getGPUUsage())
+        // Placeholder for now
         let temperature = Int.random(in: 40...75)
 
         let statusText = String(format: "C:%d%% G:%d%% R:%d%% %d°", cpuUsage, gpuUsage, ramUsage, temperature)

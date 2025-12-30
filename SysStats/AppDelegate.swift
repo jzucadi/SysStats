@@ -12,6 +12,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupPopover()
         installHelperIfNeeded()
         observeStatsManager()
+        observePreferences()
+        PreferencesManager.shared.checkLaunchAtLoginStatus()
         StatsManager.shared.startMonitoring()
     }
 
@@ -25,7 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if HelperManager.shared.needsInstallation {
             HelperManager.shared.installHelper { success in
                 if success {
-                    // Helper installed, temperature will work now
                     SystemStats.shared.updateTemperatureAsync()
                 }
             }
@@ -35,19 +36,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Status Item Setup
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: 170)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
             button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
             button.action = #selector(togglePopover)
             button.target = self
-            button.title = "C:—% G:—% R:—% —°"
+            button.title = "SysStats"
         }
     }
 
     // MARK: - Stats Observation
 
-    private func observeStatsManager() {
+    @MainActor private func observeStatsManager() {
         StatsManager.shared.$currentMetrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] metrics in
@@ -56,15 +57,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
     }
 
+    private func observePreferences() {
+        let prefs = PreferencesManager.shared
+
+        Publishers.CombineLatest4(
+            prefs.$showCPU,
+            prefs.$showGPU,
+            prefs.$showRAM,
+            prefs.$showTemperature
+        )
+        .combineLatest(prefs.$temperatureUnit)
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            Task { @MainActor in
+                self?.updateStatusText(with: StatsManager.shared.currentMetrics)
+            }
+        }
+        .store(in: &cancellables)
+    }
+
     private func updateStatusText(with metrics: SystemMetrics) {
-        statusItem?.button?.title = metrics.statusBarText
+        statusItem?.button?.title = metrics.statusBarText(prefs: PreferencesManager.shared)
     }
 
     // MARK: - Popover
 
     private func setupPopover() {
         popover = NSPopover()
-        popover?.contentSize = NSSize(width: 300, height: 200)
+        popover?.contentSize = NSSize(width: 300, height: 320)
         popover?.behavior = .transient
         popover?.contentViewController = NSHostingController(rootView: ContentView())
     }

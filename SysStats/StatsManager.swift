@@ -7,16 +7,32 @@ struct SystemMetrics {
     let ramUsage: Int
     let temperature: Double
 
-    var temperatureString: String {
+    func temperatureString(unit: TemperatureUnit) -> String {
         if temperature > 0 {
-            return String(format: "%d°", Int(temperature))
+            let displayTemp = unit == .fahrenheit ? temperature * 9/5 + 32 : temperature
+            return String(format: "%d°", Int(displayTemp))
         } else {
             return "—°"
         }
     }
 
-    var statusBarText: String {
-        return String(format: "C:%d%% G:%d%% R:%d%% %@", cpuUsage, gpuUsage, ramUsage, temperatureString)
+    func statusBarText(prefs: PreferencesManager) -> String {
+        var components: [String] = []
+
+        if prefs.showCPU {
+            components.append(String(format: "C:%d%%", cpuUsage))
+        }
+        if prefs.showGPU {
+            components.append(String(format: "G:%d%%", gpuUsage))
+        }
+        if prefs.showRAM {
+            components.append(String(format: "R:%d%%", ramUsage))
+        }
+        if prefs.showTemperature {
+            components.append(temperatureString(unit: prefs.temperatureUnit))
+        }
+
+        return components.isEmpty ? "SysStats" : components.joined(separator: " ")
     }
 }
 
@@ -32,18 +48,36 @@ class StatsManager: ObservableObject {
     )
 
     private var updateTask: Task<Void, Never>?
-    private let updateInterval: TimeInterval = 2.0
+    private var cancellables = Set<AnyCancellable>()
 
-    private init() {}
+    private init() {
+        observePreferences()
+    }
+
+    private func observePreferences() {
+        PreferencesManager.shared.$updateInterval
+            .sink { [weak self] _ in
+                self?.restartMonitoring()
+            }
+            .store(in: &cancellables)
+    }
 
     func startMonitoring() {
         stopMonitoring()
 
+        let interval = PreferencesManager.shared.updateInterval.rawValue
+
         updateTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.fetchAllMetrics()
-                try? await Task.sleep(nanoseconds: UInt64(2_000_000_000))
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
             }
+        }
+    }
+
+    private func restartMonitoring() {
+        if updateTask != nil {
+            startMonitoring()
         }
     }
 
@@ -53,7 +87,6 @@ class StatsManager: ObservableObject {
     }
 
     private func fetchAllMetrics() async {
-        // Fetch all metrics concurrently using async let
         async let cpuTask = fetchCPUUsage()
         async let gpuTask = fetchGPUUsage()
         async let ramTask = fetchRAMUsage()
@@ -100,10 +133,8 @@ class StatsManager: ObservableObject {
 
     private func fetchTemperature() async -> Double {
         return await withCheckedContinuation { continuation in
-            // First trigger async update
             SystemStats.shared.updateTemperatureAsync()
 
-            // Then get cached value (will be updated by next cycle)
             DispatchQueue.global(qos: .utility).async {
                 let temp = SystemStats.shared.getCPUTemperature()
                 continuation.resume(returning: temp)

@@ -55,4 +55,31 @@ class SystemStats {
 
         return cpuUsage
     }
+
+    func getRAMUsage() -> Double {
+        var vmStats = vm_statistics64()
+        var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+
+        let result = withUnsafeMutablePointer(to: &vmStats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+            }
+        }
+
+        guard result == KERN_SUCCESS else {
+            return 0.0
+        }
+
+        let pageSize = UInt64(vm_kernel_page_size)
+        let totalRAM = UInt64(ProcessInfo.processInfo.physicalMemory)
+
+        let activeMemory = UInt64(vmStats.active_count) * pageSize
+        let wiredMemory = UInt64(vmStats.wire_count) * pageSize
+        let compressedMemory = UInt64(vmStats.compressor_page_count) * pageSize
+
+        let usedMemory = activeMemory + wiredMemory + compressedMemory
+        let ramUsage = (Double(usedMemory) / Double(totalRAM)) * 100.0
+
+        return ramUsage
+    }
 }

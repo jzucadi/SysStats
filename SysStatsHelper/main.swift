@@ -1,52 +1,244 @@
 import Foundation
+import IOKit
 
-// MARK: - SMC Structures (same as main app)
+// MARK: - Platform Detection
 
-struct SMCKeyData {
-    struct Vers {
-        var major: UInt8 = 0
-        var minor: UInt8 = 0
-        var build: UInt8 = 0
-        var reserved: UInt8 = 0
-        var release: UInt16 = 0
+func isAppleSilicon() -> Bool {
+    var sysinfo = utsname()
+    uname(&sysinfo)
+    let machine = withUnsafePointer(to: &sysinfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+            String(validatingUTF8: $0)
+        }
     }
-
-    struct LimitData {
-        var version: UInt16 = 0
-        var length: UInt16 = 0
-        var cpuPLimit: UInt32 = 0
-        var gpuPLimit: UInt32 = 0
-        var memPLimit: UInt32 = 0
-    }
-
-    struct KeyInfo {
-        var dataSize: UInt32 = 0
-        var dataType: UInt32 = 0
-        var dataAttributes: UInt8 = 0
-    }
-
-    var key: UInt32 = 0
-    var vers = Vers()
-    var pLimitData = LimitData()
-    var keyInfo = KeyInfo()
-    var result: UInt8 = 0
-    var status: UInt8 = 0
-    var data8: UInt8 = 0
-    var data32: UInt32 = 0
-    var bytes: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
-                UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
-                UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
-                UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8) = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+    return machine?.contains("arm64") ?? false
 }
 
-let kSMCHandleYieldKey: UInt32 = 2
-let kSMCReadKey: UInt8 = 5
-let kSMCGetKeyInfo: UInt8 = 9
+// MARK: - Apple Silicon Temperature (IOReport)
 
-// MARK: - SMC Temperature Reader
+class AppleSiliconTemperatureReader {
 
-class SMCTemperatureReader {
+    func getTemperature() -> Double {
+        // Try IOReport for thermal data on Apple Silicon
+        if let temp = readIOReportThermal() {
+            return temp
+        }
+
+        // Fallback: Try HID thermal sensors
+        if let temp = readHIDThermal() {
+            return temp
+        }
+
+        // Fallback: Try IOKit thermal sensors
+        if let temp = readIOKitThermal() {
+            return temp
+        }
+
+        return 0.0
+    }
+
+    private func readIOReportThermal() -> Double? {
+        // IOReport channel for thermal
+        guard let matching = IOServiceMatching("AppleARMIODevice") else { return nil }
+
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
+            return nil
+        }
+        defer { IOObjectRelease(iterator) }
+
+        var maxTemp: Double = 0
+
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer {
+                IOObjectRelease(service)
+                service = IOIteratorNext(iterator)
+            }
+
+            var properties: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+                  let props = properties?.takeRetainedValue() as? [String: Any] else {
+                continue
+            }
+
+            // Look for temperature properties
+            if let temp = props["Temperature"] as? Double, temp > 10 && temp < 120 {
+                maxTemp = max(maxTemp, temp)
+            }
+        }
+
+        return maxTemp > 0 ? maxTemp : nil
+    }
+
+    private func readHIDThermal() -> Double? {
+        // Use IOHIDEventSystem for thermal events
+        guard let matching = IOServiceMatching("AppleHIDThermalSensor") as? [String: Any] else {
+            // Try alternative service names
+            return readAlternativeHIDThermal()
+        }
+
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching as CFDictionary, &iterator) == KERN_SUCCESS else {
+            return readAlternativeHIDThermal()
+        }
+        defer { IOObjectRelease(iterator) }
+
+        var maxTemp: Double = 0
+
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer {
+                IOObjectRelease(service)
+                service = IOIteratorNext(iterator)
+            }
+
+            if let temp = readTemperatureFromService(service) {
+                maxTemp = max(maxTemp, temp)
+            }
+        }
+
+        return maxTemp > 0 ? maxTemp : nil
+    }
+
+    private func readAlternativeHIDThermal() -> Double? {
+        let serviceNames = [
+            "AppleSocThermalSensor",
+            "AppleM1ThermalSensor",
+            "AppleM2ThermalSensor",
+            "AppleM3ThermalSensor",
+            "IOHIDEventDriver"
+        ]
+
+        var maxTemp: Double = 0
+
+        for serviceName in serviceNames {
+            guard let matching = IOServiceMatching(serviceName) else { continue }
+
+            var iterator: io_iterator_t = 0
+            guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS else {
+                continue
+            }
+            defer { IOObjectRelease(iterator) }
+
+            var service = IOIteratorNext(iterator)
+            while service != 0 {
+                defer {
+                    IOObjectRelease(service)
+                    service = IOIteratorNext(iterator)
+                }
+
+                if let temp = readTemperatureFromService(service) {
+                    maxTemp = max(maxTemp, temp)
+                }
+            }
+        }
+
+        return maxTemp > 0 ? maxTemp : nil
+    }
+
+    private func readTemperatureFromService(_ service: io_object_t) -> Double? {
+        var properties: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let props = properties?.takeRetainedValue() as? [String: Any] else {
+            return nil
+        }
+
+        // Check various temperature property names
+        let tempKeys = ["Temperature", "CurrentTemperature", "temperature", "temp", "die-temperature"]
+
+        for key in tempKeys {
+            if let temp = props[key] as? Double, temp > 10 && temp < 120 {
+                return temp
+            }
+            if let temp = props[key] as? Int, temp > 10 && temp < 120 {
+                return Double(temp)
+            }
+            // Some sensors report in centidegrees
+            if let temp = props[key] as? Int, temp > 1000 && temp < 12000 {
+                return Double(temp) / 100.0
+            }
+        }
+
+        return nil
+    }
+
+    private func readIOKitThermal() -> Double? {
+        // Query thermal zones via IOKit
+        guard let matching = IOServiceMatching("IOPlatformExpertDevice") else { return nil }
+
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, matching)
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+
+        // Try to get thermal properties
+        var properties: Unmanaged<CFMutableDictionary>?
+        guard IORegistryEntryCreateCFProperties(service, &properties, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+              let props = properties?.takeRetainedValue() as? [String: Any] else {
+            return nil
+        }
+
+        // Look for any temperature-related values
+        for (key, value) in props {
+            if key.lowercased().contains("temp") || key.lowercased().contains("thermal") {
+                if let temp = value as? Double, temp > 10 && temp < 120 {
+                    return temp
+                }
+                if let temp = value as? Int, temp > 10 && temp < 120 {
+                    return Double(temp)
+                }
+            }
+        }
+
+        return nil
+    }
+}
+
+// MARK: - Intel SMC Temperature
+
+class IntelSMCTemperatureReader {
     private var smcConnection: io_connect_t = 0
+
+    struct SMCKeyData {
+        struct Vers {
+            var major: UInt8 = 0
+            var minor: UInt8 = 0
+            var build: UInt8 = 0
+            var reserved: UInt8 = 0
+            var release: UInt16 = 0
+        }
+
+        struct LimitData {
+            var version: UInt16 = 0
+            var length: UInt16 = 0
+            var cpuPLimit: UInt32 = 0
+            var gpuPLimit: UInt32 = 0
+            var memPLimit: UInt32 = 0
+        }
+
+        struct KeyInfo {
+            var dataSize: UInt32 = 0
+            var dataType: UInt32 = 0
+            var dataAttributes: UInt8 = 0
+        }
+
+        var key: UInt32 = 0
+        var vers = Vers()
+        var pLimitData = LimitData()
+        var keyInfo = KeyInfo()
+        var result: UInt8 = 0
+        var status: UInt8 = 0
+        var data8: UInt8 = 0
+        var data32: UInt32 = 0
+        var bytes: (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
+                    UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
+                    UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
+                    UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8) = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+    }
+
+    private let kSMCHandleYieldKey: UInt32 = 2
+    private let kSMCReadKey: UInt8 = 5
+    private let kSMCGetKeyInfo: UInt8 = 9
 
     init() {
         openSMCConnection()
@@ -57,32 +249,22 @@ class SMCTemperatureReader {
     }
 
     private func openSMCConnection() {
-        let serviceNames = ["AppleSMC", "AppleSMCFamily"]
+        let matchingDict = IOServiceMatching("AppleSMC")
+        var iterator: io_iterator_t = 0
 
-        for serviceName in serviceNames {
-            let matchingDict = IOServiceMatching(serviceName)
-            var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == KERN_SUCCESS else {
+            return
+        }
+        defer { IOObjectRelease(iterator) }
 
-            guard IOServiceGetMatchingServices(kIOMainPortDefault, matchingDict, &iterator) == KERN_SUCCESS else {
-                continue
-            }
+        let service = IOIteratorNext(iterator)
+        guard service != 0 else { return }
+        defer { IOObjectRelease(service) }
 
-            let service = IOIteratorNext(iterator)
-            IOObjectRelease(iterator)
-
-            guard service != 0 else { continue }
-
-            for clientType: UInt32 in 0...2 {
-                var connection: io_connect_t = 0
-                let result = IOServiceOpen(service, mach_task_self_, clientType, &connection)
-                if result == KERN_SUCCESS && connection != 0 {
-                    smcConnection = connection
-                    IOObjectRelease(service)
-                    return
-                }
-            }
-
-            IOObjectRelease(service)
+        var connection: io_connect_t = 0
+        let result = IOServiceOpen(service, mach_task_self_, 0, &connection)
+        if result == KERN_SUCCESS {
+            smcConnection = connection
         }
     }
 
@@ -182,34 +364,45 @@ class SMCTemperatureReader {
     }
 
     func getTemperature() -> Double {
-        let appleSiliconKeys = [
-            "Tp01", "Tp05", "Tp09", "Tp0D", "Tp0H", "Tp0L", "Tp0P", "Tp0T", "Tp0X", "Tp0b",
-            "Tp0f", "Tp0j", "Tp0n", "Tp0r",
-            "Tp02", "Tp06", "Tp0A", "Tp0E", "Tp0I", "Tp0M", "Tp0Q", "Tp0U", "Tp0Y", "Tp0c",
-            "Tc0a", "Tc0b", "Tc0c", "Tc0d",
-            "Ts0P", "Ts0S", "Ts1P", "Ts1S",
-            "Tw0P", "TW0P"
-        ]
-
-        let intelKeys = [
+        let keys = [
             "TC0P", "TC0H", "TC0D", "TC0E", "TC0F",
             "TC1C", "TC2C", "TC3C", "TC4C", "TC5C", "TC6C", "TC7C", "TC8C",
-            "TCAD", "TCGC", "TCSA", "TCTD"
+            "TCAD", "TCGC", "TCSA", "TCTD",
+            "TG0P", "TG0D", "TG0H"
         ]
 
-        for key in appleSiliconKeys {
-            if let temp = readSMCKey(key), temp > 10 && temp < 120 {
-                return temp
-            }
-        }
-
-        for key in intelKeys {
+        for key in keys {
             if let temp = readSMCKey(key), temp > 10 && temp < 120 {
                 return temp
             }
         }
 
         return 0.0
+    }
+}
+
+// MARK: - Combined Temperature Reader
+
+class TemperatureReader {
+    private let appleSiliconReader = AppleSiliconTemperatureReader()
+    private let intelReader = IntelSMCTemperatureReader()
+    private let useAppleSilicon: Bool
+
+    init() {
+        useAppleSilicon = isAppleSilicon()
+    }
+
+    func getTemperature() -> Double {
+        if useAppleSilicon {
+            let temp = appleSiliconReader.getTemperature()
+            if temp > 0 {
+                return temp
+            }
+            // Fallback to SMC if IOKit methods fail
+            return intelReader.getTemperature()
+        } else {
+            return intelReader.getTemperature()
+        }
     }
 }
 
@@ -227,7 +420,7 @@ class HelperDelegate: NSObject, NSXPCListenerDelegate {
 // MARK: - Helper Protocol Implementation
 
 @objc class Helper: NSObject, HelperProtocol {
-    private let temperatureReader = SMCTemperatureReader()
+    private let temperatureReader = TemperatureReader()
 
     func getTemperature(completion: @escaping (Double) -> Void) {
         let temp = temperatureReader.getTemperature()
@@ -237,6 +430,11 @@ class HelperDelegate: NSObject, NSXPCListenerDelegate {
     func getVersion(completion: @escaping (String) -> Void) {
         completion(HelperConstants.helperVersion)
     }
+
+    func getPlatformInfo(completion: @escaping (String) -> Void) {
+        let platform = isAppleSilicon() ? "Apple Silicon" : "Intel"
+        completion(platform)
+    }
 }
 
 // MARK: - Protocol Definition (must match main app)
@@ -245,11 +443,12 @@ class HelperDelegate: NSObject, NSXPCListenerDelegate {
 protocol HelperProtocol {
     func getTemperature(completion: @escaping (Double) -> Void)
     func getVersion(completion: @escaping (String) -> Void)
+    func getPlatformInfo(completion: @escaping (String) -> Void)
 }
 
 struct HelperConstants {
     static let machServiceName = "com.example.SysStatsHelper"
-    static let helperVersion = "1.0.0"
+    static let helperVersion = "1.0.1"
 }
 
 // MARK: - Main Entry Point

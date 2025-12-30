@@ -45,7 +45,7 @@ struct ContentView: View {
 
                 if prefs.showGPU {
                     StatRow(
-                        icon: "gpu",
+                        icon: "cube.transparent.fill",
                         label: "GPU",
                         value: "\(statsManager.currentMetrics.gpuUsage)%",
                         percentage: Double(statsManager.currentMetrics.gpuUsage) / 100.0

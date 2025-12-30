@@ -1,17 +1,25 @@
 import AppKit
 import SwiftUI
+import Combine
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    private var updateTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupPopover()
         installHelperIfNeeded()
-        startUpdateTimer()
+        observeStatsManager()
+        StatsManager.shared.startMonitoring()
     }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        StatsManager.shared.stopMonitoring()
+    }
+
+    // MARK: - Helper Installation
 
     private func installHelperIfNeeded() {
         if HelperManager.shared.needsInstallation {
@@ -24,6 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Status Item Setup
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: 170)
 
@@ -31,39 +41,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
             button.action = #selector(togglePopover)
             button.target = self
-            updateStatusText()
+            button.title = "C:—% G:—% R:—% —°"
         }
     }
 
-    private func startUpdateTimer() {
-        // Initial temperature update
-        SystemStats.shared.updateTemperatureAsync()
+    // MARK: - Stats Observation
 
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            SystemStats.shared.updateTemperatureAsync()
-            self?.updateStatusText()
-        }
+    private func observeStatsManager() {
+        StatsManager.shared.$currentMetrics
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] metrics in
+                self?.updateStatusText(with: metrics)
+            }
+            .store(in: &cancellables)
     }
 
-    private func updateStatusText() {
-        let cpuUsage = Int(SystemStats.shared.getCPUUsage())
-        let ramUsage = Int(SystemStats.shared.getRAMUsage())
-        let gpuUsage = Int(SystemStats.shared.getGPUUsage())
-        let temperature = SystemStats.shared.getCPUTemperature()
-
-        let tempString: String
-        if temperature > 0 {
-            tempString = String(format: "%d°", Int(temperature))
-        } else {
-            tempString = "—°"
-        }
-
-        let statusText = String(format: "C:%d%% G:%d%% R:%d%% %@", cpuUsage, gpuUsage, ramUsage, tempString)
-
-        DispatchQueue.main.async {
-            self.statusItem?.button?.title = statusText
-        }
+    private func updateStatusText(with metrics: SystemMetrics) {
+        statusItem?.button?.title = metrics.statusBarText
     }
+
+    // MARK: - Popover
 
     private func setupPopover() {
         popover = NSPopover()

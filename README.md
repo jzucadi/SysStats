@@ -21,10 +21,10 @@ A lightweight macOS menu bar application that displays real-time system statisti
 
 | Icon | Metric |
 |------|--------|
-| ![cpu](https://img.shields.io/badge/-CPU-blue) | CPU usage percentage |
-| ![gpu](https://img.shields.io/badge/-GPU-green) | GPU usage percentage |
-| ![ram](https://img.shields.io/badge/-RAM-orange) | RAM usage percentage |
-| ![temp](https://img.shields.io/badge/-Temp-red) | Temperature (°C or °F) |
+| 🖥️ | CPU usage percentage |
+| 🧊 | GPU usage percentage |
+| 💾 | RAM usage percentage |
+| 🌡️ | Temperature (°C or °F) |
 
 ## Popover Details
 

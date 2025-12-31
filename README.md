@@ -12,9 +12,7 @@ A lightweight macOS menu bar application that displays real-time system statisti
 
 ## Display Format
 
-```
-C:45% G:30% R:62% 52°
-```
+<img width="164" height="33" alt="Screenshot 2025-12-31 at 1 40 06 PM" src="https://github.com/user-attachments/assets/7e4de76b-d575-42f7-b0dc-96add4952f79" />
 
 - **C** - CPU usage percentage
 - **G** - GPU usage percentage

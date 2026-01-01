@@ -102,43 +102,30 @@ class StatsManager: ObservableObject {
         )
     }
 
-    // MARK: - Individual Metric Fetchers
+    // MARK: - Metric Fetching
 
-    private func fetchCPUUsage() async -> Int {
-        return await withCheckedContinuation { continuation in
+    private func fetchMetric<T>(_ fetch: @escaping () -> T) async -> T {
+        await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .utility).async {
-                let usage = Int(SystemStats.shared.getCPUUsage())
-                continuation.resume(returning: usage)
+                continuation.resume(returning: fetch())
             }
         }
+    }
+
+    private func fetchCPUUsage() async -> Int {
+        await fetchMetric { Int(SystemStats.shared.getCPUUsage()) }
     }
 
     private func fetchGPUUsage() async -> Int {
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .utility).async {
-                let usage = Int(SystemStats.shared.getGPUUsage())
-                continuation.resume(returning: usage)
-            }
-        }
+        await fetchMetric { Int(SystemStats.shared.getGPUUsage()) }
     }
 
     private func fetchRAMUsage() async -> Int {
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .utility).async {
-                let usage = Int(SystemStats.shared.getRAMUsage())
-                continuation.resume(returning: usage)
-            }
-        }
+        await fetchMetric { Int(SystemStats.shared.getRAMUsage()) }
     }
 
     private func fetchTemperature() async -> Double {
-        return await withCheckedContinuation { continuation in
-            SystemStats.shared.updateTemperatureAsync()
-
-            DispatchQueue.global(qos: .utility).async {
-                let temp = SystemStats.shared.getCPUTemperature()
-                continuation.resume(returning: temp)
-            }
-        }
+        SystemStats.shared.updateTemperatureAsync()
+        return await fetchMetric { SystemStats.shared.getCPUTemperature() }
     }
 }

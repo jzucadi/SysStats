@@ -16,12 +16,14 @@
 		A100002E229AAAAA00000001 /* StatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002F229AAAAA00000001 /* StatsManager.swift */; };
 		A1000031229AAAAA00000001 /* PreferencesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000030229AAAAA00000001 /* PreferencesManager.swift */; };
 		A1000035229AAAAA00000001 /* Protocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000036229AAAAA00000001 /* Protocols.swift */; };
+		A1000048229AAAAA00000001 /* StatType.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000049229AAAAA00000001 /* StatType.swift */; };
 		A1000020229AAAAA00000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021229AAAAA00000001 /* main.swift */; };
 		A1000025229AAAAA00000001 /* com.example.SysStatsHelper in CopyFiles */ = {isa = PBXBuildFile; fileRef = A100001F229AAAAA00000001 /* com.example.SysStatsHelper */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1000033229AAAAA00000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000034229AAAAA00000001 /* Assets.xcassets */; };
 		A1000040229AAAAA00000001 /* SystemMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000041229AAAAA00000001 /* SystemMetricsTests.swift */; };
 		A1000042229AAAAA00000001 /* PreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000043229AAAAA00000001 /* PreferencesManagerTests.swift */; };
 		A1000044229AAAAA00000001 /* Mocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000045229AAAAA00000001 /* Mocks.swift */; };
+		A100004A229AAAAA00000001 /* StatTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100004B229AAAAA00000001 /* StatTypeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +69,7 @@
 		A100002F229AAAAA00000001 /* StatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsManager.swift; sourceTree = "<group>"; };
 		A1000030229AAAAA00000001 /* PreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesManager.swift; sourceTree = "<group>"; };
 		A1000036229AAAAA00000001 /* Protocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocols.swift; sourceTree = "<group>"; };
+		A1000049229AAAAA00000001 /* StatType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatType.swift; sourceTree = "<group>"; };
 		A100001F229AAAAA00000001 /* com.example.SysStatsHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = com.example.SysStatsHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000021229AAAAA00000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A1000022229AAAAA00000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -77,6 +80,7 @@
 		A1000041229AAAAA00000001 /* SystemMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMetricsTests.swift; sourceTree = "<group>"; };
 		A1000043229AAAAA00000001 /* PreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesManagerTests.swift; sourceTree = "<group>"; };
 		A1000045229AAAAA00000001 /* Mocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mocks.swift; sourceTree = "<group>"; };
+		A100004B229AAAAA00000001 /* StatTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatTypeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +128,7 @@
 				A100002F229AAAAA00000001 /* StatsManager.swift */,
 				A1000030229AAAAA00000001 /* PreferencesManager.swift */,
 				A1000036229AAAAA00000001 /* Protocols.swift */,
+				A1000049229AAAAA00000001 /* StatType.swift */,
 				A100001B229AAAAA00000001 /* HelperProtocol.swift */,
 				A100001D229AAAAA00000001 /* HelperManager.swift */,
 				A1000034229AAAAA00000001 /* Assets.xcassets */,
@@ -148,6 +153,7 @@
 			children = (
 				A1000041229AAAAA00000001 /* SystemMetricsTests.swift */,
 				A1000043229AAAAA00000001 /* PreferencesManagerTests.swift */,
+				A100004B229AAAAA00000001 /* StatTypeTests.swift */,
 				A1000045229AAAAA00000001 /* Mocks.swift */,
 			);
 			path = SysStatsTests;
@@ -292,6 +298,7 @@
 				A100002E229AAAAA00000001 /* StatsManager.swift in Sources */,
 				A1000031229AAAAA00000001 /* PreferencesManager.swift in Sources */,
 				A1000035229AAAAA00000001 /* Protocols.swift in Sources */,
+				A1000048229AAAAA00000001 /* StatType.swift in Sources */,
 				A100001A229AAAAA00000001 /* HelperProtocol.swift in Sources */,
 				A100001C229AAAAA00000001 /* HelperManager.swift in Sources */,
 			);
@@ -311,6 +318,7 @@
 			files = (
 				A1000040229AAAAA00000001 /* SystemMetricsTests.swift in Sources */,
 				A1000042229AAAAA00000001 /* PreferencesManagerTests.swift in Sources */,
+				A100004A229AAAAA00000001 /* StatTypeTests.swift in Sources */,
 				A1000044229AAAAA00000001 /* Mocks.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

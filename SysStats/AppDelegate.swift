@@ -85,49 +85,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         let textAttributes: [NSAttributedString.Key: Any] = [.font: font]
 
-        func appendIcon(_ symbolName: String) {
-            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
-                let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
-                let configuredImage = image.withSymbolConfiguration(config) ?? image
-                let attachment = NSTextAttachment()
-                attachment.image = configuredImage
-                attributed.append(NSAttributedString(attachment: attachment))
-            }
-        }
-
         var isFirst = true
 
-        if prefs.showCPU {
-            appendIcon("cpu")
-            attributed.append(NSAttributedString(string: "\(metrics.cpuUsage)%", attributes: textAttributes))
-            isFirst = false
-        }
+        for statType in StatType.allCases {
+            guard statType.isEnabled(in: prefs) else { continue }
 
-        if prefs.showGPU {
-            if !isFirst { attributed.append(NSAttributedString(string: " ", attributes: textAttributes)) }
-            appendIcon("cube.transparent.fill")
-            attributed.append(NSAttributedString(string: "\(metrics.gpuUsage)%", attributes: textAttributes))
-            isFirst = false
-        }
+            if !isFirst {
+                attributed.append(NSAttributedString(string: " ", attributes: textAttributes))
+            }
 
-        if prefs.showRAM {
-            if !isFirst { attributed.append(NSAttributedString(string: " ", attributes: textAttributes)) }
-            appendIcon("memorychip")
-            attributed.append(NSAttributedString(string: "\(metrics.ramUsage)%", attributes: textAttributes))
-            isFirst = false
-        }
+            appendIcon(statType.icon, to: attributed)
 
-        if prefs.showTemperature {
-            if !isFirst { attributed.append(NSAttributedString(string: " ", attributes: textAttributes)) }
-            let tempString = metrics.temperatureString(unit: prefs.temperatureUnit)
-            appendIcon("thermometer.medium")
-            attributed.append(NSAttributedString(string: tempString, attributes: textAttributes))
+            let valueString: String
+            if statType == .temperature {
+                valueString = metrics.temperatureString(unit: prefs.temperatureUnit)
+            } else {
+                valueString = statType.formattedValue(from: metrics)
+            }
+
+            attributed.append(NSAttributedString(string: valueString, attributes: textAttributes))
+            isFirst = false
         }
 
         if attributed.length == 0 {
             button.attributedTitle = NSAttributedString(string: "SysStats", attributes: textAttributes)
         } else {
             button.attributedTitle = attributed
+        }
+    }
+
+    private func appendIcon(_ symbolName: String, to attributed: NSMutableAttributedString) {
+        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
+            let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+            let configuredImage = image.withSymbolConfiguration(config) ?? image
+            let attachment = NSTextAttachment()
+            attachment.image = configuredImage
+            attributed.append(NSAttributedString(attachment: attachment))
         }
     }
 

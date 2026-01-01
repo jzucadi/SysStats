@@ -34,48 +34,9 @@ struct ContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 10) {
-                if prefs.showCPU {
-                    StatRow(
-                        icon: "cpu",
-                        label: "CPU",
-                        value: "\(statsManager.currentMetrics.cpuUsage)%",
-                        percentage: Double(statsManager.currentMetrics.cpuUsage) / 100.0
-                    )
-                }
-
-                if prefs.showGPU {
-                    StatRow(
-                        icon: "cube.transparent.fill",
-                        label: "GPU",
-                        value: "\(statsManager.currentMetrics.gpuUsage)%",
-                        percentage: Double(statsManager.currentMetrics.gpuUsage) / 100.0
-                    )
-                }
-
-                if prefs.showRAM {
-                    StatRow(
-                        icon: "memorychip",
-                        label: "RAM",
-                        value: "\(statsManager.currentMetrics.ramUsage)%",
-                        percentage: Double(statsManager.currentMetrics.ramUsage) / 100.0
-                    )
-                }
-
-                if prefs.showTemperature {
-                    let temp = statsManager.currentMetrics.temperature
-                    let displayTemp = prefs.temperatureUnit == .fahrenheit ? temp * 9/5 + 32 : temp
-                    let tempString = temp > 0 ? String(format: "%.0f%@", displayTemp, prefs.temperatureUnit.label) : "—"
-
-                    HStack {
-                        Image(systemName: "thermometer.medium")
-                            .frame(width: 20)
-                            .foregroundColor(.orange)
-                        Text("Temp")
-                            .frame(width: 40, alignment: .leading)
-                        Spacer()
-                        Text(tempString)
-                            .monospacedDigit()
-                            .foregroundColor(tempColor(temp))
+                ForEach(StatType.allCases) { statType in
+                    if statType.isEnabled(in: prefs) {
+                        statRow(for: statType)
                     }
                 }
             }
@@ -99,11 +60,30 @@ struct ContentView: View {
         .padding()
     }
 
-    private func tempColor(_ temp: Double) -> Color {
-        if temp <= 0 { return .secondary }
-        if temp < 50 { return .green }
-        if temp < 70 { return .orange }
-        return .red
+    @ViewBuilder
+    private func statRow(for statType: StatType) -> some View {
+        let metrics = statsManager.currentMetrics
+
+        if statType == .temperature {
+            HStack {
+                Image(systemName: statType.icon)
+                    .frame(width: 20)
+                    .foregroundColor(ColorUtilities.iconColor(for: statType))
+                Text(statType.label)
+                    .frame(width: 40, alignment: .leading)
+                Spacer()
+                Text(TemperatureUtilities.format(metrics.temperature, unit: prefs.temperatureUnit))
+                    .monospacedDigit()
+                    .foregroundColor(ColorUtilities.temperatureColor(for: metrics.temperature))
+            }
+        } else {
+            StatRow(
+                icon: statType.icon,
+                label: statType.label,
+                value: statType.formattedValue(from: metrics),
+                percentage: statType.percentage(from: metrics)
+            )
+        }
     }
 
     // MARK: - Preferences View
@@ -224,9 +204,7 @@ struct StatRow: View {
     }
 
     private var barColor: Color {
-        if percentage < 0.5 { return .green }
-        if percentage < 0.8 { return .orange }
-        return .red
+        ColorUtilities.usageColor(for: percentage)
     }
 }
 

@@ -1,6 +1,6 @@
 # SysStats
 
-<img width="485" height="36" alt="Screenshot 2025-12-30 at 6 18 06 PM" src="https://github.com/user-attachments/assets/f85068d6-02d0-4667-a0d5-960874b6cfb6" />
+<img width="496" height="36" alt="Screenshot 2026-01-02 at 6 27 31 PM" src="https://github.com/user-attachments/assets/05a890e6-7577-4e69-b3ba-c882862f3a42" />
 
 A lightweight macOS menu bar application that displays real-time system statistics directly in your status bar.
 

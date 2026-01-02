@@ -39,11 +39,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            button.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+            button.font = NSFont.monospacedDigitSystemFont(
+                ofSize: UIConstants.StatusBar.fontSize,
+                weight: UIConstants.StatusBar.fontWeight
+            )
             button.action = #selector(togglePopover)
             button.target = self
-            button.title = "SysStats"
+            button.title = AppConstants.appName
         }
+        Log.ui.debug("Status item initialized")
     }
 
     // MARK: - Stats Observation
@@ -108,7 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if attributed.length == 0 {
-            button.attributedTitle = NSAttributedString(string: "SysStats", attributes: textAttributes)
+            button.attributedTitle = NSAttributedString(string: AppConstants.appName, attributes: textAttributes)
         } else {
             button.attributedTitle = attributed
         }
@@ -116,7 +120,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func appendIcon(_ symbolName: String, to attributed: NSMutableAttributedString) {
         if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
-            let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+            let config = NSImage.SymbolConfiguration(
+                pointSize: UIConstants.StatusBar.iconPointSize,
+                weight: UIConstants.StatusBar.iconWeight
+            )
             let configuredImage = image.withSymbolConfiguration(config) ?? image
             let attachment = NSTextAttachment()
             attachment.image = configuredImage
@@ -128,9 +135,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         popover = NSPopover()
-        popover?.contentSize = NSSize(width: 300, height: 320)
+        popover?.contentSize = NSSize(
+            width: UIConstants.Popover.width,
+            height: UIConstants.Popover.height
+        )
         popover?.behavior = .transient
         popover?.contentViewController = NSHostingController(rootView: ContentView())
+        Log.ui.debug("Popover initialized")
     }
 
     @objc private func togglePopover() {

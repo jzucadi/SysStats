@@ -13,13 +13,13 @@ struct ContentView: View {
                 statsView
             }
         }
-        .frame(width: 280)
+        .frame(width: UIConstants.Popover.contentWidth)
     }
 
     // MARK: - Stats View
 
     private var statsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: UIConstants.Layout.sectionSpacing) {
             HStack {
                 Text("System Stats")
                     .font(.headline)
@@ -29,14 +29,18 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open Preferences")
             }
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: UIConstants.Layout.itemSpacing) {
                 ForEach(StatType.allCases) { statType in
                     if statType.isEnabled(in: prefs) {
                         statRow(for: statType)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(statType.accessibilityLabel)
+                            .accessibilityValue(statType.accessibilityValue(from: statsManager.currentMetrics, unit: prefs.temperatureUnit))
                     }
                 }
             }
@@ -49,6 +53,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(.red)
+                .accessibilityLabel("Quit SysStats")
 
                 Spacer()
 
@@ -67,10 +72,10 @@ struct ContentView: View {
         if statType == .temperature {
             HStack {
                 Image(systemName: statType.icon)
-                    .frame(width: 20)
+                    .frame(width: UIConstants.StatRow.iconWidth)
                     .foregroundColor(ColorUtilities.iconColor(for: statType))
                 Text(statType.label)
-                    .frame(width: 40, alignment: .leading)
+                    .frame(width: UIConstants.StatRow.labelWidth, alignment: .leading)
                 Spacer()
                 Text(TemperatureUtilities.format(metrics.temperature, unit: prefs.temperatureUnit))
                     .monospacedDigit()
@@ -89,13 +94,14 @@ struct ContentView: View {
     // MARK: - Preferences View
 
     private var preferencesView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: UIConstants.Layout.sectionSpacing) {
             HStack {
                 Button(action: { showingPreferences = false }) {
                     Image(systemName: "chevron.left")
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back to Stats")
 
                 Text("Preferences")
                     .font(.headline)
@@ -106,24 +112,25 @@ struct ContentView: View {
             Divider()
 
             // Update Interval
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: UIConstants.Layout.preferenceItemSpacing) {
                 Text("Update Interval")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                Picker("", selection: $prefs.updateInterval) {
+                Picker("Update Interval", selection: $prefs.updateInterval) {
                     ForEach(UpdateInterval.allCases, id: \.self) { interval in
                         Text(interval.label).tag(interval)
                     }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .accessibilityLabel("Update Interval")
             }
 
             Divider()
 
             // Stats to Show
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: UIConstants.Layout.preferenceItemSpacing) {
                 Text("Show in Menu Bar")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -141,18 +148,19 @@ struct ContentView: View {
             Divider()
 
             // Temperature Unit
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: UIConstants.Layout.preferenceItemSpacing) {
                 Text("Temperature Unit")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                Picker("", selection: $prefs.temperatureUnit) {
+                Picker("Temperature Unit", selection: $prefs.temperatureUnit) {
                     ForEach(TemperatureUnit.allCases, id: \.self) { unit in
                         Text(unit.label).tag(unit)
                     }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .accessibilityLabel("Temperature Unit")
             }
 
             Divider()
@@ -176,30 +184,30 @@ struct StatRow: View {
     let percentage: Double
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: UIConstants.StatRow.spacing) {
             Image(systemName: icon)
-                .frame(width: 20)
+                .frame(width: UIConstants.StatRow.iconWidth)
                 .foregroundColor(.accentColor)
 
             Text(label)
-                .frame(width: 40, alignment: .leading)
+                .frame(width: UIConstants.StatRow.labelWidth, alignment: .leading)
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: UIConstants.StatRow.barCornerRadius)
                         .fill(Color.secondary.opacity(0.2))
-                        .frame(height: 8)
+                        .frame(height: UIConstants.StatRow.barHeight)
 
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: UIConstants.StatRow.barCornerRadius)
                         .fill(barColor)
-                        .frame(width: geometry.size.width * min(max(percentage, 0), 1), height: 8)
+                        .frame(width: geometry.size.width * UsageConstants.clampPercentage(percentage), height: UIConstants.StatRow.barHeight)
                 }
             }
-            .frame(height: 8)
+            .frame(height: UIConstants.StatRow.barHeight)
 
             Text(value)
                 .monospacedDigit()
-                .frame(width: 40, alignment: .trailing)
+                .frame(width: UIConstants.StatRow.valueWidth, alignment: .trailing)
         }
     }
 

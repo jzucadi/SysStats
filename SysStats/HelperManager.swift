@@ -15,6 +15,8 @@ class HelperManager {
     // MARK: - Helper Installation
 
     func installHelper(completion: @escaping (Bool) -> Void) {
+        Log.helper.info("Attempting to install privileged helper")
+
         var authRef: AuthorizationRef?
         var authItem = AuthorizationItem(name: kSMRightBlessPrivilegedHelper, valueLength: 0, value: nil, flags: 0)
         var authRights = AuthorizationRights(count: 1, items: &authItem)
@@ -23,6 +25,7 @@ class HelperManager {
         let status = AuthorizationCreate(&authRights, nil, authFlags, &authRef)
 
         guard status == errAuthorizationSuccess, let authorization = authRef else {
+            Log.helper.error("Failed to create authorization: \(status)")
             completion(false)
             return
         }
@@ -38,28 +41,34 @@ class HelperManager {
         AuthorizationFree(authorization, [])
 
         if success {
+            Log.helper.info("Helper installed successfully")
             isHelperInstalled = true
             setupConnection()
+        } else if let cfError = error?.takeRetainedValue() {
+            Log.helper.error("Helper installation failed: \(cfError)")
         }
 
         completion(success)
     }
 
     private func checkHelperInstallation() {
-        // Try to connect to see if helper is already installed
+        Log.helper.debug("Checking helper installation status")
+
         let connection = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
         connection.resume()
 
-        let helper = connection.remoteObjectProxyWithErrorHandler { _ in
-            // Helper not installed or not responding
+        let helper = connection.remoteObjectProxyWithErrorHandler { error in
+            Log.helper.debug("Helper not available: \(error.localizedDescription)")
         } as? HelperProtocol
 
         helper?.getVersion { [weak self] version in
             if version == HelperConstants.helperVersion {
+                Log.helper.info("Helper found with matching version: \(version)")
                 self?.isHelperInstalled = true
                 self?.helperConnection = connection
             } else {
+                Log.helper.warning("Helper version mismatch: expected \(HelperConstants.helperVersion), got \(version)")
                 connection.invalidate()
             }
         }

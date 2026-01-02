@@ -89,22 +89,22 @@ final class StatTypeTests: XCTestCase {
 final class ColorUtilitiesTests: XCTestCase {
 
     func testUsageColorGreen() {
-        // Below 50% should be green
+        // Below green threshold should be green
         XCTAssertEqual(ColorUtilities.usageColor(for: 0.0), .green)
         XCTAssertEqual(ColorUtilities.usageColor(for: 0.25), .green)
-        XCTAssertEqual(ColorUtilities.usageColor(for: 0.49), .green)
+        XCTAssertEqual(ColorUtilities.usageColor(for: UsageConstants.greenThreshold - 0.01), .green)
     }
 
     func testUsageColorOrange() {
-        // 50% to 80% should be orange
-        XCTAssertEqual(ColorUtilities.usageColor(for: 0.5), .orange)
+        // Between green and orange threshold should be orange
+        XCTAssertEqual(ColorUtilities.usageColor(for: UsageConstants.greenThreshold), .orange)
         XCTAssertEqual(ColorUtilities.usageColor(for: 0.65), .orange)
-        XCTAssertEqual(ColorUtilities.usageColor(for: 0.79), .orange)
+        XCTAssertEqual(ColorUtilities.usageColor(for: UsageConstants.orangeThreshold - 0.01), .orange)
     }
 
     func testUsageColorRed() {
-        // 80% and above should be red
-        XCTAssertEqual(ColorUtilities.usageColor(for: 0.8), .red)
+        // At or above orange threshold should be red
+        XCTAssertEqual(ColorUtilities.usageColor(for: UsageConstants.orangeThreshold), .red)
         XCTAssertEqual(ColorUtilities.usageColor(for: 0.9), .red)
         XCTAssertEqual(ColorUtilities.usageColor(for: 1.0), .red)
     }
@@ -116,23 +116,40 @@ final class ColorUtilitiesTests: XCTestCase {
     }
 
     func testTemperatureColorGreen() {
-        // Below 50°C should be green
+        // Below green threshold should be green
         XCTAssertEqual(ColorUtilities.temperatureColor(for: 30), .green)
-        XCTAssertEqual(ColorUtilities.temperatureColor(for: 49), .green)
+        XCTAssertEqual(ColorUtilities.temperatureColor(for: TemperatureConstants.greenThreshold - 1), .green)
     }
 
     func testTemperatureColorOrange() {
-        // 50°C to 70°C should be orange
-        XCTAssertEqual(ColorUtilities.temperatureColor(for: 50), .orange)
+        // Between green and orange threshold should be orange
+        XCTAssertEqual(ColorUtilities.temperatureColor(for: TemperatureConstants.greenThreshold), .orange)
         XCTAssertEqual(ColorUtilities.temperatureColor(for: 60), .orange)
-        XCTAssertEqual(ColorUtilities.temperatureColor(for: 69), .orange)
+        XCTAssertEqual(ColorUtilities.temperatureColor(for: TemperatureConstants.orangeThreshold - 1), .orange)
     }
 
     func testTemperatureColorRed() {
-        // 70°C and above should be red
-        XCTAssertEqual(ColorUtilities.temperatureColor(for: 70), .red)
+        // At or above orange threshold should be red
+        XCTAssertEqual(ColorUtilities.temperatureColor(for: TemperatureConstants.orangeThreshold), .red)
         XCTAssertEqual(ColorUtilities.temperatureColor(for: 85), .red)
         XCTAssertEqual(ColorUtilities.temperatureColor(for: 100), .red)
+    }
+
+    func testTemperatureIsValid() {
+        XCTAssertFalse(TemperatureConstants.isValid(0))
+        XCTAssertFalse(TemperatureConstants.isValid(10))
+        XCTAssertTrue(TemperatureConstants.isValid(50))
+        XCTAssertTrue(TemperatureConstants.isValid(100))
+        XCTAssertFalse(TemperatureConstants.isValid(120))
+        XCTAssertFalse(TemperatureConstants.isValid(150))
+    }
+
+    func testClampPercentage() {
+        XCTAssertEqual(UsageConstants.clampPercentage(-0.5), 0)
+        XCTAssertEqual(UsageConstants.clampPercentage(0.0), 0)
+        XCTAssertEqual(UsageConstants.clampPercentage(0.5), 0.5)
+        XCTAssertEqual(UsageConstants.clampPercentage(1.0), 1)
+        XCTAssertEqual(UsageConstants.clampPercentage(1.5), 1)
     }
 }
 

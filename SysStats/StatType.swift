@@ -37,6 +37,35 @@ enum StatType: String, CaseIterable, Identifiable {
         }
     }
 
+    var accessibilityLabel: String {
+        switch self {
+        case .cpu: return "CPU Usage"
+        case .gpu: return "GPU Usage"
+        case .ram: return "Memory Usage"
+        case .temperature: return "System Temperature"
+        }
+    }
+
+    func accessibilityValue(from metrics: SystemMetrics, unit: TemperatureUnit = .celsius) -> String {
+        switch self {
+        case .cpu:
+            return "\(metrics.cpuUsage) percent"
+        case .gpu:
+            return "\(metrics.gpuUsage) percent"
+        case .ram:
+            return "\(metrics.ramUsage) percent"
+        case .temperature:
+            if metrics.temperature > 0 {
+                let temp = unit == .fahrenheit
+                    ? TemperatureUtilities.celsiusToFahrenheit(metrics.temperature)
+                    : metrics.temperature
+                let unitName = unit == .fahrenheit ? "Fahrenheit" : "Celsius"
+                return "\(Int(temp)) degrees \(unitName)"
+            }
+            return "Temperature unavailable"
+        }
+    }
+
     func isEnabled(in prefs: PreferencesProtocol) -> Bool {
         switch self {
         case .cpu: return prefs.showCPU
@@ -80,16 +109,16 @@ enum StatType: String, CaseIterable, Identifiable {
 struct ColorUtilities {
     /// Returns color based on usage percentage (0.0 - 1.0)
     static func usageColor(for percentage: Double) -> Color {
-        if percentage < 0.5 { return .green }
-        if percentage < 0.8 { return .orange }
+        if percentage < UsageConstants.greenThreshold { return .green }
+        if percentage < UsageConstants.orangeThreshold { return .orange }
         return .red
     }
 
     /// Returns color based on temperature in Celsius
     static func temperatureColor(for celsius: Double) -> Color {
         if celsius <= 0 { return .secondary }
-        if celsius < 50 { return .green }
-        if celsius < 70 { return .orange }
+        if celsius < TemperatureConstants.greenThreshold { return .green }
+        if celsius < TemperatureConstants.orangeThreshold { return .orange }
         return .red
     }
 

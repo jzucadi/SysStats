@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import os.log
 
 // MARK: - App Constants
@@ -15,7 +15,8 @@ enum UIConstants {
         static let fontSize: CGFloat = 11
         static let fontWeight: NSFont.Weight = .regular
         static let iconPointSize: CGFloat = 11
-        static let iconWeight: NSImage.SymbolWeight = .medium
+        static let iconWeight: NSFont.Weight = .medium
+        static let statSeparator = "  "  // Double space between stats for readability
     }
 
     enum Popover {

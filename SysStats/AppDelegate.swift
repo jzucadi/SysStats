@@ -95,7 +95,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard statType.isEnabled(in: prefs) else { continue }
 
             if !isFirst {
-                attributed.append(NSAttributedString(string: " ", attributes: textAttributes))
+                attributed.append(NSAttributedString(string: UIConstants.StatusBar.statSeparator, attributes: textAttributes))
             }
 
             appendIcon(statType.icon, to: attributed)

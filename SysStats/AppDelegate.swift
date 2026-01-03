@@ -52,7 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Stats Observation
 
-    @MainActor private func observeStatsManager() {
+    private func observeStatsManager() {
         StatsManager.shared.$currentMetrics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] metrics in

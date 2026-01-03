@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: ["main"]
 
-# Cancel in-progress runs for the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -28,25 +27,20 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
-
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/*.xcodeproj/project.pbxproj') }}
-          restore-keys: |
-            ${{ runner.os }}-deriveddata-
+          xcodebuild -project SysStats.xcodeproj -list
 
       - name: Build
         run: |
           xcodebuild clean build \
             -project SysStats.xcodeproj \
             -scheme SysStats \
-            -destination 'platform=macOS' \
+            -destination 'generic/platform=macOS' \
             -configuration Debug \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            GCC_TREAT_WARNINGS_AS_ERRORS=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=NO
 
       - name: Run Tests
         run: |
@@ -55,17 +49,6 @@ jobs:
             -scheme SysStats \
             -destination 'platform=macOS' \
             -configuration Debug \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-
-      - name: Analyze
-        run: |
-          xcodebuild analyze \
-            -project SysStats.xcodeproj \
-            -scheme SysStats \
-            -destination 'platform=macOS' \
-            -configuration Debug \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO

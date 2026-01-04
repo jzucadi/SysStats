@@ -17,38 +17,40 @@ class HelperManager {
     func installHelper(completion: @escaping (Bool) -> Void) {
         Log.helper.info("Attempting to install privileged helper")
 
-        var authRef: AuthorizationRef?
-        var authItem = AuthorizationItem(name: kSMRightBlessPrivilegedHelper, valueLength: 0, value: nil, flags: 0)
-        var authRights = AuthorizationRights(count: 1, items: &authItem)
-        let authFlags: AuthorizationFlags = [.interactionAllowed, .extendRights, .preAuthorize]
+        kSMRightBlessPrivilegedHelper.withCString { cString in
+            var authRef: AuthorizationRef?
+            var authItem = AuthorizationItem(name: cString, valueLength: 0, value: nil, flags: 0)
+            var authRights = AuthorizationRights(count: 1, items: &authItem)
+            let authFlags: AuthorizationFlags = [.interactionAllowed, .extendRights, .preAuthorize]
 
-        let status = AuthorizationCreate(&authRights, nil, authFlags, &authRef)
+            let status = AuthorizationCreate(&authRights, nil, authFlags, &authRef)
 
-        guard status == errAuthorizationSuccess, let authorization = authRef else {
-            Log.helper.error("Failed to create authorization: \(status)")
-            completion(false)
-            return
+            guard status == errAuthorizationSuccess, let authorization = authRef else {
+                Log.helper.error("Failed to create authorization: \(status)")
+                completion(false)
+                return
+            }
+
+            var error: Unmanaged<CFError>?
+            let success = SMJobBless(
+                kSMDomainSystemLaunchd,
+                HelperConstants.machServiceName as CFString,
+                authorization,
+                &error
+            )
+
+            AuthorizationFree(authorization, [])
+
+            if success {
+                Log.helper.info("Helper installed successfully")
+                self.isHelperInstalled = true
+                self.setupConnection()
+            } else if let cfError = error?.takeRetainedValue() {
+                Log.helper.error("Helper installation failed: \(cfError)")
+            }
+
+            completion(success)
         }
-
-        var error: Unmanaged<CFError>?
-        let success = SMJobBless(
-            kSMDomainSystemLaunchd,
-            HelperConstants.machServiceName as CFString,
-            authorization,
-            &error
-        )
-
-        AuthorizationFree(authorization, [])
-
-        if success {
-            Log.helper.info("Helper installed successfully")
-            isHelperInstalled = true
-            setupConnection()
-        } else if let cfError = error?.takeRetainedValue() {
-            Log.helper.error("Helper installation failed: \(cfError)")
-        }
-
-        completion(success)
     }
 
     private func checkHelperInstallation() {

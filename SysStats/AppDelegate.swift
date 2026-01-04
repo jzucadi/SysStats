@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Combine
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -73,9 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         .combineLatest(prefs.$temperatureUnit)
         .receive(on: DispatchQueue.main)
         .sink { [weak self] _ in
-            Task { @MainActor in
-                self?.updateStatusText(with: StatsManager.shared.currentMetrics)
-            }
+            self?.updateStatusText(with: StatsManager.shared.currentMetrics)
         }
         .store(in: &cancellables)
     }

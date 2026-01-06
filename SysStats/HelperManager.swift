@@ -6,9 +6,10 @@ class HelperManager {
 
     private var helperConnection: NSXPCConnection?
     private var isHelperInstalled = false
-    private lazy var daemonService = SMAppService.daemon(plistName: HelperConstants.machServiceName + ".plist")
+    private let daemonService: SMAppService
 
     private init() {
+        daemonService = SMAppService.daemon(plistName: "\(HelperConstants.machServiceName).plist")
         checkHelperInstallation()
     }
 
@@ -34,10 +35,10 @@ class HelperManager {
 
         // First check SMAppService status
         let status = daemonService.status
-        Log.helper.debug("Daemon service status: \(status)")
+        Log.helper.debug("Daemon service status: \(String(describing: status))")
 
         guard status == .enabled else {
-            Log.helper.debug("Helper service not enabled (status: \(status))")
+            Log.helper.debug("Helper service not enabled (status: \(String(describing: status)))")
             return
         }
 

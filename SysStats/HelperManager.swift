@@ -6,7 +6,7 @@ class HelperManager {
 
     private var helperConnection: NSXPCConnection?
     private var isHelperInstalled = false
-    private let daemonService = SMAppService.daemon(plistName: "\(HelperConstants.machServiceName).plist")
+    private lazy var daemonService = SMAppService.daemon(plistName: HelperConstants.machServiceName + ".plist")
 
     private init() {
         checkHelperInstallation()

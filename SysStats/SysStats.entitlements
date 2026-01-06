@@ -18,7 +18,7 @@
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
 
-    <!-- SMJobBless for privileged helper -->
+    <!-- SMAppService for privileged helper daemon -->
     <key>com.apple.security.SMJobBless</key>
     <true/>
 </dict>

@@ -180,7 +180,7 @@ SysStats is built with modern Swift and SwiftUI, using the following architectur
 - **IOKit** - Low-level system information access
 - **SMC (System Management Controller)** - Temperature and thermal sensor data
 - **XPC Services** - Secure inter-process communication for privileged operations
-- **SMJobBless** - Privileged helper installation for secure temperature access
+- **SMAppService** - Privileged helper installation for secure temperature access
 
 ### Temperature Monitoring
 
@@ -229,7 +229,7 @@ For public distribution, your app must be signed and notarized by Apple:
 
 The app is configured with Hardened Runtime for enhanced security. Required entitlements are defined in `SysStats.entitlements`.
 
-**Important:** The privileged helper (`SysStatsHelper`) requires proper signing with a Developer ID certificate for SMJobBless to work on end-user machines. Development builds may have limited temperature monitoring functionality.
+**Important:** The privileged helper (`SysStatsHelper`) requires proper signing with a Developer ID certificate for SMAppService to work on end-user machines. Development builds may have limited temperature monitoring functionality.
 
 ## Troubleshooting
 

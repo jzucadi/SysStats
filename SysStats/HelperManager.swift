@@ -1,12 +1,12 @@
 import Foundation
 import ServiceManagement
-import Security
 
 class HelperManager {
     static let shared = HelperManager()
 
     private var helperConnection: NSXPCConnection?
     private var isHelperInstalled = false
+    private let daemonService = SMAppService.daemon(plistName: "\(HelperConstants.machServiceName).plist")
 
     private init() {
         checkHelperInstallation()
@@ -17,45 +17,31 @@ class HelperManager {
     func installHelper(completion: @escaping (Bool) -> Void) {
         Log.helper.info("Attempting to install privileged helper")
 
-        kSMRightBlessPrivilegedHelper.withCString { cString in
-            var authRef: AuthorizationRef?
-            var authItem = AuthorizationItem(name: cString, valueLength: 0, value: nil, flags: 0)
-            var authRights = AuthorizationRights(count: 1, items: &authItem)
-            let authFlags: AuthorizationFlags = [.interactionAllowed, .extendRights, .preAuthorize]
-
-            let status = AuthorizationCreate(&authRights, nil, authFlags, &authRef)
-
-            guard status == errAuthorizationSuccess, let authorization = authRef else {
-                Log.helper.error("Failed to create authorization: \(status)")
-                completion(false)
-                return
-            }
-
-            var error: Unmanaged<CFError>?
-            let success = SMJobBless(
-                kSMDomainSystemLaunchd,
-                HelperConstants.machServiceName as CFString,
-                authorization,
-                &error
-            )
-
-            AuthorizationFree(authorization, [])
-
-            if success {
-                Log.helper.info("Helper installed successfully")
-                self.isHelperInstalled = true
-                self.setupConnection()
-            } else if let cfError = error?.takeRetainedValue() {
-                Log.helper.error("Helper installation failed: \(cfError)")
-            }
-
-            completion(success)
+        do {
+            try daemonService.register()
+            Log.helper.info("Helper installed successfully")
+            self.isHelperInstalled = true
+            self.setupConnection()
+            completion(true)
+        } catch {
+            Log.helper.error("Helper installation failed: \(error.localizedDescription)")
+            completion(false)
         }
     }
 
     private func checkHelperInstallation() {
         Log.helper.debug("Checking helper installation status")
 
+        // First check SMAppService status
+        let status = daemonService.status
+        Log.helper.debug("Daemon service status: \(status)")
+
+        guard status == .enabled else {
+            Log.helper.debug("Helper service not enabled (status: \(status))")
+            return
+        }
+
+        // Verify helper is actually running and has correct version
         let connection = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
         connection.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
         connection.resume()

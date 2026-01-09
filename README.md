@@ -5,7 +5,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<img width="496" height="36" alt="SysStats Menu Bar" src="https://github.com/user-attachments/assets/05a890e6-7577-4e69-b3ba-c882862f3a42" />
+<img width="501" height="37" alt="Screenshot 2026-01-09 at 1 39 32 PM" src="https://github.com/user-attachments/assets/9b0e3055-3274-4aa4-b37d-8488a22d146c" />
 
 A lightweight macOS menu bar application that displays real-time system statistics directly in your status bar.
 
@@ -39,7 +39,7 @@ A lightweight macOS menu bar application that displays real-time system statisti
 
 ### Menu Bar Display
 
-<img width="164" height="35" alt="Menu Bar Stats" src="https://github.com/user-attachments/assets/7fbdcf2a-889f-402c-983d-ad57c46a9ce3" />
+<img width="317" height="65" alt="sys-stats-small-pic" src="https://github.com/user-attachments/assets/5f5912dc-83e1-489f-90f5-b1d3f5dba23c" />
 
 The menu bar shows real-time system metrics in a compact format:
 

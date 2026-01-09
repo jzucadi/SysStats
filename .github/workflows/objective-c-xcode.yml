@@ -37,6 +37,7 @@ jobs:
             ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES
 
       # Tests disabled: Menu bar apps require GUI which CI runners don't have

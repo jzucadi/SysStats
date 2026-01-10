@@ -39,7 +39,7 @@ A lightweight macOS menu bar application that displays real-time system statisti
 
 ### Menu Bar Display
 
-<img width="317" height="65" alt="sys-stats-small-pic" src="https://github.com/user-attachments/assets/5f5912dc-83e1-489f-90f5-b1d3f5dba23c" />
+<img width="200" height="65" alt="sys-stats-small-pic" src="https://github.com/user-attachments/assets/5f5912dc-83e1-489f-90f5-b1d3f5dba23c" />
 
 The menu bar shows real-time system metrics in a compact format:
 

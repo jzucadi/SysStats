@@ -1,13 +1,13 @@
-# SysStats
+# JimiStats
 
 [![CI](https://github.com/jzucadi/SysStats/actions/workflows/objective-c-xcode.yml/badge.svg)](https://github.com/jzucadi/SysStats/actions/workflows/objective-c-xcode.yml)
 [![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<img width="501" height="37" alt="Screenshot 2026-01-09 at 1 39 32 PM" src="https://github.com/user-attachments/assets/9b0e3055-3274-4aa4-b37d-8488a22d146c" />
+<img width="522" height="37" alt="Screenshot 2026-06-18 at 2 24 50 PM" src="https://github.com/user-attachments/assets/5296d6a6-2510-4c25-a28a-ae401527f434" />
 
-A lightweight macOS menu bar application that displays real-time system statistics directly in your status bar.
+The only system stat app you will ever need.
 
 ## Table of Contents
 

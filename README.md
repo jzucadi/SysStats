@@ -39,7 +39,7 @@ The only system stat app you will ever need.
 
 ### Menu Bar Display
 
-<img width="200" height="65" alt="sys-stats-small-pic" src="https://github.com/user-attachments/assets/5f5912dc-83e1-489f-90f5-b1d3f5dba23c" />
+<img width="522" height="37" alt="Screenshot 2026-06-18 at 2 24 50 PM" src="https://github.com/user-attachments/assets/5296d6a6-2510-4c25-a28a-ae401527f434" />
 
 The menu bar shows real-time system metrics in a compact format:
 

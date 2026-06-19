@@ -1,6 +1,6 @@
 # MyStats
 
-[![CI](https://github.com/jzucadi/SysStats/actions/workflows/objective-c-xcode.yml/badge.svg)](https://github.com/jzucadi/SysStats/actions/workflows/objective-c-xcode.yml)
+[![CI](https://github.com/jzucadi/MyStats/actions/workflows/objective-c-xcode.yml/badge.svg)](https://github.com/jzucadi/MyStats/actions/workflows/objective-c-xcode.yml)
 [![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org/)
 
@@ -76,7 +76,7 @@ Access preferences via the gear icon in the popover:
 
 ### Option 1: Download Pre-built Binary (Recommended)
 
-1. Download the latest release DMG from the [Releases](https://github.com/jzucadi/SysStats/releases) page
+1. Download the latest release DMG from the [Releases](https://github.com/jzucadi/MyStats/releases) page
 2. Open the DMG file
 3. Drag `SysStats.app` to your Applications folder
 4. Launch SysStats from Applications — it appears in the menu bar right away
@@ -97,7 +97,7 @@ See [Building from Source](#building-from-source) section below.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/jzucadi/SysStats.git
+   git clone https://github.com/jzucadi/MyStats.git
    cd SysStats
    ```
 
@@ -304,7 +304,7 @@ Contributions are welcome! Here's how you can help:
 
 ### Reporting Issues
 
-- Use the [GitHub Issues](https://github.com/jzucadi/SysStats/issues) page
+- Use the [GitHub Issues](https://github.com/jzucadi/MyStats/issues) page
 - Include macOS version, Mac model, and steps to reproduce
 - Attach relevant logs from Console.app if applicable
 
